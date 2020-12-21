@@ -10,9 +10,6 @@ engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[0].id)
 
-# Chrome path
-chrome_path = 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s'
-
 
 def speak(audio):
     """This Function convert the given string to audio and speak it out"""
@@ -64,27 +61,46 @@ if __name__ == '__main__':
             results = wikipedia.summary(query, sentences=2)
             print(results)
             speak(results)
+            speak("Anything else Sir!")
+
+        elif 'hi liam' in query:
+            speak("How are you sir?")
+
+        elif 'am fine' in query:
+            speak("That's Great!")
+            speak("Anything else Sir!")
+
+        # elif 'open idle' in query:
+        #     idle_path = "C:\Users\anshk\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Python 3.9"
+        #     os.startfile(idle_path)
 
         elif 'open youtube' in query:
             webbrowser.open("youtube.com")
+            speak("Anything else Sir!")
 
         elif 'open google' in query:
             webbrowser.open("google.com")
+            speak("Anything else Sir!")
 
         elif 'open stackoverflow' in query:
             webbrowser.open("stackoverflow.com")
+            speak("Anything else Sir!")
 
         elif 'open github' in query:
             webbrowser.open("github.com")
+            speak("Anything else Sir!")
 
         elif 'play music' in query:
             music_dir = 'D:\\New_Folder'  # Use address of your directory where music is stored
             songs = os.listdir(music_dir)
             os.startfile(os.path.join(music_dir, songs[random.randint(0, len(songs) - 1)]))
+            speak("Anything else Sir!")
 
         elif 'the time' in query:
             curr_time = datetime.datetime.now().strftime("%H:%M:%S")
             speak("Sir, The time is {}".format(curr_time))
+            speak("Anything else Sir!")
 
         elif 'quit' in query:
+            speak("Have a good day Sir.")
             exit()
