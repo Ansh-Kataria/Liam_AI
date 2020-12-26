@@ -5,6 +5,10 @@ import wikipedia
 import webbrowser
 import os
 import random
+import requests
+
+# Chrome path
+chrome_path = "C:/Program Files/Google//Chrome/Application/chrome.exe %s"
 
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
@@ -61,45 +65,51 @@ if __name__ == '__main__':
             results = wikipedia.summary(query, sentences=2)
             print(results)
             speak(results)
-            speak("Anything else Sir!")
 
         elif 'hi liam' in query:
             speak("How are you sir?")
 
         elif 'am fine' in query:
             speak("That's Great!")
-            speak("Anything else Sir!")
-
-        # elif 'open idle' in query:
-        #     idle_path = "C:\Users\anshk\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Python 3.9"
-        #     os.startfile(idle_path)
 
         elif 'open youtube' in query:
-            webbrowser.open("youtube.com")
-            speak("Anything else Sir!")
+            webbrowser.get(chrome_path).open("youtube.com")
 
         elif 'open google' in query:
-            webbrowser.open("google.com")
-            speak("Anything else Sir!")
+            webbrowser.get(chrome_path).open("google.com")
 
         elif 'open stackoverflow' in query:
-            webbrowser.open("stackoverflow.com")
-            speak("Anything else Sir!")
+            webbrowser.get(chrome_path).open("stackoverflow.com")
 
         elif 'open github' in query:
-            webbrowser.open("github.com")
-            speak("Anything else Sir!")
+            webbrowser.get(chrome_path).open("github.com")
+
+        elif 'open notepad' in query:
+            n_path = "C:\\Windows\\system32\\notepad.exe"
+            os.startfile(n_path)
+
+        elif 'Open code' in query:
+            code_path = "C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2020.2.4\\bin\\idea64.exe"
+            os.startfile(code_path)
+
+        elif 'open whatsapp' in query:
+            webbrowser.get(chrome_path).open("web.whatsapp.com")
+
+        elif 'open command prompt' in query:
+            os.system("start cmd")
+
+        elif 'ip address' in query:
+            ip = requests.get("https://api.ipify.org").text
+            speak("Your IP address is {} ".format(ip))
 
         elif 'play music' in query:
             music_dir = 'D:\\New_Folder'  # Use address of your directory where music is stored
             songs = os.listdir(music_dir)
             os.startfile(os.path.join(music_dir, songs[random.randint(0, len(songs) - 1)]))
-            speak("Anything else Sir!")
 
         elif 'the time' in query:
             curr_time = datetime.datetime.now().strftime("%H:%M:%S")
             speak("Sir, The time is {}".format(curr_time))
-            speak("Anything else Sir!")
 
         elif 'quit' in query:
             speak("Have a good day Sir.")
