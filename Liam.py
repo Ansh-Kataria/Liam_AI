@@ -9,12 +9,21 @@ import speech_recognition as sr
 import wikipedia
 import webbrowser
 import os
+import sys
 import random
 import requests
 import pywhatkit
 import pyautogui
 import time
 import instaloader
+import PyPDF2
+from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtCore import QTimer, QTime, QDate, Qt, QDateTime
+from PyQt5.QtGui import QMovie
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from LiamUi import Ui_LiamUi
 
 # This path is used to create chrome browser environment to open some websites
 chrome_path = "C:/Program Files/Google//Chrome/Application/chrome.exe %s"
@@ -37,7 +46,7 @@ def speak(audio):
 
 
 # ----------To Wish the user----------
-def wish_me():
+def greet():
     """This Function wishes You According to time"""
 
     # check current hour
@@ -50,7 +59,7 @@ def wish_me():
 
     # If current time is between 12 noon to 6 P.M it will wish Good Afternoon
     elif 12 < current_hour <= 18:
-        speak("Good Afternoon!, It's {} in the evening".format(cur_time))
+        speak("Good Afternoon!, It's {} in the day".format(cur_time))
 
     # If current time is between 6 P.M to 9 P.M it will wish Good Evening and tell time in the evening
     elif 18 < current_hour <= 21:
@@ -63,29 +72,6 @@ def wish_me():
     # After Wishing It will Introduce itself
     speak("I am Liam, I am here as your personal assistant. "
           "Tell me, How can I help you?")
-
-
-# ---------To take command from user----------
-def take_command():
-    """This function takes input from user and return string output """
-    # Creating a Recognizer
-    recognizer = sr.Recognizer()
-
-    # Setting Up the microphone
-    with sr.Microphone() as source:
-        print("Listening....")
-        recognizer.pause_threshold = 1
-        audio = recognizer.listen(source)
-
-    try:
-        print("Recognizing...")
-        query = recognizer.recognize_google(audio, language='en-in')  # Using google for voice recognition.
-        print("User said: {}".format(query))  # User query will be printed.
-
-    except Exception:
-        print("Say that again please...")  # Say that again will be printed in case of improper voice
-        return "None"  # None string will be returned
-    return query
 
 
 # --------Functions to fetch news--------------
@@ -167,215 +153,310 @@ def news_sports():
         speak("today's {} news is: {}".format(number[i], articles_list[i]))
 
 
-# Main
-if __name__ == '__main__':
+# --------Read PDF File--------
+def pdf_reader():
+    speak("Sir, please input the full name of PDF.")
+    book_name = input("Enter the name of the file: ")
+    book = open(book_name, 'rb')
+    pdf_read = PyPDF2.PdfFileReader(book)
+    pages = pdf_read.numPages
+    speak("There are {} pages in the Book you provided".format(pages))
+    speak("Sir, From which page should I start reading?")
+    page_number = int(input("Input the page number: "))
+    audio_book = pdf_read.getPage(page_number).extractText()
+    speak(audio_book)
 
-    # Wishing you at the start of program
-    wish_me()
 
-    # Endless loop to continuously ask command from user
-    while True:
+class MainThread(QThread):
+    def __init__(self):
+        super(MainThread, self).__init__()
 
-        # Taking command from user
-        command = take_command().lower()
+    def run(self):
+        self.command_Execution()
 
-        # ---------Logic For different tasks---------
+    # ---------To take command from user----------
+    def listen(self):
+        """This function takes input from user and return string output """
+        # Creating a Recognizer
+        recognizer = sr.Recognizer()
 
-        # To interact with liam
-        if 'hi liam' in command:
-            speak("How are you sir?")
+        # Setting Up the microphone
+        with sr.Microphone() as source:
+            print("Listening....")
+            recognizer.pause_threshold = 1
+            # recognizer.energy_threshold = 100
+            audio = recognizer.listen(source)
 
-        elif 'am fine' in command:
-            speak("That's Great!")
+        try:
+            print("Recognizing...")
+            query = recognizer.recognize_google(audio, language='en-in')  # Using google for voice recognition.
+            print("User said: {}".format(query))  # User query will be printed.
 
-        # To search anything on wikipedia
-        elif 'wikipedia' in command:
-            speak("Searching Wikipedia, Sir, Please wait!")
-            command = command.replace("wikipedia", "")
-            results = wikipedia.summary(command, sentences=2)
-            print(results)
-            speak(results)
+        except Exception:
+            print("Say that again please...")  # Say that again will be printed in case of improper voice
+            return "None"  # None string will be returned
+        return query
 
-        # To open Youtube in chrome
-        elif 'open youtube' in command:
-            webbrowser.get(chrome_path).open("youtube.com")
+    # Main
+    def command_Execution(self):
+        # Wishing you at the start of program
+        greet()
 
-        # To open Google in chrome
-        elif 'open google' in command:
-            speak("Sir, What should i search on google?")
-            task = take_command().lower()
-            tabUrl = "http://google.com/?#q="
-            webbrowser.get(chrome_path).open("{}".format(tabUrl + task))
+        # Endless loop to continuously ask command from user
+        while True:
 
-        # To play music on Youtube
-        elif 'play music on youtube' in command:
-            speak("Sir, What should I play?")
-            task = take_command().lower()
-            pywhatkit.playonyt(task)
+            # Taking command from user
+            self.command = self.listen().lower()
 
-        # To open Stackoverflow in chrome
-        elif 'open stackoverflow' in command:
-            webbrowser.get(chrome_path).open("stackoverflow.com")
+            # ---------Logic For different tasks---------
 
-        # To open Github in chrome
-        elif 'open github' in command:
-            webbrowser.get(chrome_path).open("github.com")
+            # To interact with liam
+            if 'hi liam' in self.command:
+                speak("How are you sir?")
 
-        # To open Notepad
-        elif 'open notepad' in command:
-            n_path = "C:\\Windows\\system32\\notepad.exe"
-            os.startfile(n_path)
+            elif 'am fine' in self.command:
+                speak("That's Great!")
 
-        # To close Notepad
-        elif 'close notepad' in command:
-            speak("closing notepad , Sir!")
-            os.system("taskkill /f /im notepad.exe")
+            # To search anything on wikipedia
+            elif 'wikipedia' in self.command:
+                speak("Searching Wikipedia, Sir, Please wait!")
+                self.command = self.command.replace("wikipedia", "")
+                results = wikipedia.summary(self.command, sentences=2)
+                print(results)
+                speak(results)
 
-        # To open IDE
-        elif 'Open IDE' in command:
-            Ide_path = "C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2020.2.4\\bin\\idea64.exe"
-            os.startfile(Ide_path)
+            # To open Youtube in chrome
+            elif 'open youtube' in self.command:
+                speak("Sir, please wait , opening youtube for you.")
+                webbrowser.get(chrome_path).open("youtube.com")
 
-        # To open whatsapp web
-        elif 'open whatsapp' in command:
-            webbrowser.get(chrome_path).open("web.whatsapp.com")
+            # To open Google in chrome
+            elif 'open google' in self.command:
+                speak("Sir, What should i search on google?")
+                task = self.listen().lower()
+                tabUrl = "http://google.com/?#q="
+                speak("Searching {} on google, please wait.".format(task))
+                webbrowser.get(chrome_path).open("{}".format(tabUrl + task))
 
-        # To open cmd
-        elif 'open command prompt' in command:
-            os.system("start cmd")
+            # To play music on Youtube
+            elif 'play music on youtube' in self.command:
+                speak("Sir, What should I play?")
+                task = self.listen().lower()
+                speak("playing {} on Youtube".format(task))
+                pywhatkit.playonyt(task)
 
-        # To close cmd
-        elif 'close command prompt' in command:
-            speak("closing command prompt , Sir!")
-            os.system("taskkill /f /im cmd.exe")
+            # To open Stackoverflow in chrome
+            elif 'open stackoverflow' in self.command:
+                speak("Sir, please wait , opening stack overflow for you.")
+                webbrowser.get(chrome_path).open("stackoverflow.com")
 
-        # To check your IP address
-        elif 'ip address' in command:
-            ip = requests.get("https://api.ipify.org").text
-            speak("Your IP address is {} ".format(ip))
+            # To open Github in chrome
+            elif 'open github' in self.command:
+                speak("Sir, please wait , opening github for you.")
+                webbrowser.get(chrome_path).open("github.com")
 
-        # To play music from the local computer
-        elif 'play music' in command:
-            music_dir = 'D:\\New_Folder'  # Use address of your directory where music is stored
-            songs = os.listdir(music_dir)
-            os.startfile(os.path.join(music_dir, songs[random.randint(0, len(songs) - 1)]))
+            # To open Notepad
+            elif 'open notepad' in self.command:
+                speak("Sir, please wait , opening notepad for you.")
+                n_path = "C:\\Windows\\system32\\notepad.exe"
+                os.startfile(n_path)
 
-        # To check the time
-        elif 'the time' in command:
+            # To close Notepad
+            elif 'close notepad' in self.command:
+                speak("Sir, please wait, closing notepad")
+                speak("closing notepad , Sir!")
+                os.system("taskkill /f /im notepad.exe")
 
-            # converting current time into string
-            curr_time = datetime.datetime.now().strftime("%H:%M:%S")
-            speak("Sir, The time is {}".format(curr_time))
+            # To open IDE
+            elif 'Open IDE' in self.command:
+                Ide_path = "C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2020.2.4\\bin\\idea64.exe"
+                os.startfile(Ide_path)
 
-        # To get some news
-        elif 'tell me some news' in command:
-            speak("Sir , please wait , fetching news related to tech for you.")
-            news()
+            # To open whatsapp web
+            elif 'open whatsapp' in self.command:
+                speak("Opening whatsapp web for you sir.")
+                webbrowser.get(chrome_path).open("web.whatsapp.com")
 
-        # To get news related to technology
-        elif 'tell me some news related to tech' in command:
-            speak("Sir , please wait , fetching news related to tech for you.")
-            news_tech()
+            # To open cmd
+            elif 'open command prompt' in self.command:
+                speak("opening cmd for you sir.")
+                os.system("start cmd")
 
-        # To get news related to sports
-        elif 'tell me some news related to sports' in command:
-            speak("Sir , please wait , fetching news related to sports for you.")
-            news_sports()
+            # To close cmd
+            elif 'close command prompt' in self.command:
+                speak("closing command prompt , Sir!")
+                os.system("taskkill /f /im cmd.exe")
 
-        # To know your location
-        elif 'where we are' in command:
-            speak("Wait Sir, let me check.")
-            try:
+            # To check your IP address
+            elif 'ip address' in self.command:
                 ip = requests.get("https://api.ipify.org").text
-                url = 'https://get.geojs.io/v1/ip/geo/' + ip + '.json'
-                geo_data = requests.get(url).json()
-                print(geo_data)
-                city = geo_data['city']
-                state = geo_data['region']
-                country = geo_data['country']
-                speak("Sir am not sure but we are in {} city in {} state which is located in {}".format(city, state, country))
+                speak("Your IP address is {} ".format(ip))
 
-            except Exception:
-                speak("Sorry Sir, Due to network issue am unable to find where we are. ")
-                pass
+            # To play music from the local computer
+            elif 'play music' in self.command:
+                speak("playing music for you sir, please wait")
+                music_dir = 'D:\\New_Folder'  # Use address of your directory where music is stored
+                songs = os.listdir(music_dir)
+                os.startfile(os.path.join(music_dir, songs[random.randint(0, len(songs) - 1)]))
 
-        # To search instagram profile by giving username
-        elif 'search instagram profile' in command:
-            speak("Sir please enter the username which you have to search")
+            # To check the time
+            elif 'the time' in self.command:
 
-            # Input the username to search
-            username = input("Enter username here: ")
+                # converting current time into string
+                curr_time = datetime.datetime.now().strftime("%H:%M:%S")
+                speak("Sir, The time is {}".format(curr_time))
 
-            # Opening the profile in chrome
-            webbrowser.get(chrome_path).open("www.instagram.com/{}".format(username))
+            # To get some news
+            elif 'tell me some news' in self.command:
+                speak("Sir , please wait , fetching news related to tech for you.")
+                news()
 
-            time.sleep(5)
+            # To get news related to technology
+            elif 'tell me some news related to tech' in self.command:
+                speak("Sir , please wait , fetching news related to tech for you.")
+                news_tech()
 
-            speak("Sir would you like to download the profile pic of this account")
+            # To get news related to sports
+            elif 'tell me some news related to sports' in self.command:
+                speak("Sir , please wait , fetching news related to sports for you.")
+                news_sports()
 
-            # Infinite loop until getting right input
-            while True:
+            # To know your location
+            elif 'where we are' in self.command:
+                speak("Wait Sir, let me check.")
                 try:
+                    ip = requests.get("https://api.ipify.org").text
+                    url = 'https://get.geojs.io/v1/ip/geo/' + ip + '.json'
+                    geo_data = requests.get(url).json()
+                    print(geo_data)
+                    city = geo_data['city']
+                    state = geo_data['region']
+                    country = geo_data['country']
+                    speak("Sir am not sure but we are in {} city in {} state which is located in {}".format(city, state,
+                                                                                                            country))
 
-                    # taking command to download profile pic or not
-                    condition = take_command().lower()
-
-                    if 'yes' in condition:
-                        mod = instaloader.Instaloader()
-                        mod.download_profile(username, profile_pic_only=True)
-                        speak("It's done Sir, The profile picture is saved to downloads , you can check it.")
-                        break
-                    else:
-                        pass
                 except Exception:
-                    speak("Sorry sir, I didn't hear you . Please repeat sir.")
+                    speak("Sorry Sir, Due to network issue am unable to find where we are. ")
+                    pass
 
-        # To take a screenshot
-        elif 'take a screenshot' in command:
-            speak("Sir, what should i name the file?")
+            # To search instagram profile by giving username
+            elif 'search instagram profile' in self.command:
+                speak("Sir please enter the username which you have to search")
 
-            # Name of file as input to save the screenshot
-            filename = take_command().lower()
-            speak("Taking the screenshot, please wait sir.")
+                # Input the username to search
+                username = input("Enter username here: ")
 
-            time.sleep(3)
+                # Opening the profile in chrome
+                webbrowser.get(chrome_path).open("www.instagram.com/{}".format(username))
 
-            # Taking screenshot
-            screenshot = pyautogui.screenshot()
+                time.sleep(5)
 
-            # saving screenshot
-            screenshot.save("{}.png".format(filename))
+                speak("Sir would you like to download the profile pic of this account")
 
-            speak("Done Sir, The Screenshot is saved to our main folder.")
+                # Infinite loop until getting right input
+                while True:
+                    try:
 
-        # To switch the current window
-        elif 'switch the window' in command:
+                        # taking command to download profile pic or not
+                        condition = self.listen().lower()
 
-            # Keep the alt key down
-            pyautogui.keyDown("alt")
+                        if 'yes' in condition:
+                            mod = instaloader.Instaloader()
+                            mod.download_profile(username, profile_pic_only=True)
+                            speak("It's done Sir, The profile picture is saved to downloads , you can check it.")
+                            break
+                        else:
+                            pass
+                    except Exception:
+                        speak("Sorry sir, I didn't hear you . Please repeat sir.")
 
-            # Press the tab key
-            pyautogui.press("tab")
+            # To take a screenshot
+            elif 'take a screenshot' in self.command:
+                speak("Sir, what should i name the file?")
 
-            # Break of one second
-            time.sleep(1)
+                # Name of file as input to save the screenshot
+                filename = self.listen().lower()
+                speak("Taking the screenshot, please wait sir.")
 
-            # pull the alt key up
-            pyautogui.keyUp("alt")
+                time.sleep(3)
 
-        # To shut down the system
-        elif 'shut down the system' in command:
-            os.system("shutdown /s /t 5")
+                # Taking screenshot
+                screenshot = pyautogui.screenshot()
 
-        # To restart the computer
-        elif 'restart the system' in command:
-            os.system("shutdown /r /t 1")
+                # saving screenshot
+                screenshot.save("{}.png".format(filename))
 
-        # To Turn on the sleep mode
-        elif 'sleep the system' in command:
-            os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+                speak("Done Sir, The Screenshot is saved to our main folder.")
 
-        # Good Bye
-        elif 'you can sleep now' in command:
-            speak("Have a good day Sir.")
-            exit()
+            # To switch the current window
+            elif 'switch the window' in self.command:
+                speak("Switching the window sir, please wait.")
+                # Keep the alt key down
+                pyautogui.keyDown("alt")
+
+                # Press the tab key
+                pyautogui.press("tab")
+
+                # Break of one second
+                time.sleep(1)
+
+                # pull the alt key up
+                pyautogui.keyUp("alt")
+
+            # To read a pdf file
+            elif 'read pdf' in self.command:
+                pdf_reader()
+
+            # To shut down the system
+            elif 'shut down the system' in self.command:
+                speak("Shutting down system, wait for few seconds.")
+                os.system("shutdown /s /t 5")
+
+            # To restart the computer
+            elif 'restart the system' in self.command:
+                speak("Restarting system, please wait sir.")
+                os.system("shutdown /r /t 1")
+
+            # To Turn on the sleep mode
+            elif 'sleep the system' in self.command:
+                speak("Sleeping Sir, Bye")
+                os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+
+            # Good Bye
+            elif 'you can sleep now' in self.command:
+                speak("Have a good day Sir.")
+                exit()
+
+
+start_Execution = MainThread()
+
+
+class Main(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.timer = QTimer()
+        self.ui = Ui_LiamUi()
+        self.ui.setupUi(self)
+        self.ui.pushButton.clicked.connect(self.startTask)
+        self.ui.pushButton_2.clicked.connect(self.close)
+
+    def startTask(self):
+        self.ui.movie = QtGui.QMovie("F:/PythonProjects/Liam_AI/Main.gif")
+        self.ui.label.setMovie(self.ui.movie)
+        self.ui.movie.start()
+        self.ui.movie = QtGui.QMovie("F:/PythonProjects/Liam_AI/loading.gif")
+        self.ui.label_3.setMovie(self.ui.movie)
+        self.ui.movie.start()
+        self.timer.timeout.connect(self.showTime)
+        self.timer.start(500)
+        start_Execution.start()
+
+    def showTime(self):
+        self.ui.label_4.setText(QDateTime.currentDateTime().toString('yyyy-MM-dd hh:mm:ss dddd'))
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    Liam = Main()
+    Liam.show()
+    exit(app.exec_())
